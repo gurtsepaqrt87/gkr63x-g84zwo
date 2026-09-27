@@ -40,8 +40,9 @@
   #bar button.on{background:#2d6a4f;border-color:#40916c}
   #bar a{padding:9px 13px;border-radius:9px;border:1px solid #2f6db3;background:#1b3a63ee;color:#fff;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block;backdrop-filter:blur(4px)}
   #bar a:hover{background:#255089}
-  .nav{flex:0 0 52px;font-size:22px;background:#1a2130;border:1px solid #445270;color:#fff;cursor:pointer;border-radius:9px}
-  .nav:hover{background:#2a3a55}
+  .nav{flex:0 0 64px;height:56px;font-size:28px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,.45)}
+  .nav:hover{background:#ffa040}
+  .nav:active{background:#cc6200}
   #cnt{font-size:12px;opacity:.7;padding:0 4px}
   #err{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#5c1a1a;border:1px solid #a33;color:#fff;padding:10px 16px;border-radius:10px;z-index:2000;display:none;font-size:14px}
 </style>
@@ -64,7 +65,7 @@
     <div id="map"><div id="world"></div></div>
     <div id="zoom"><button id="zin" title="Zoom +">+</button><button id="zout" title="Zoom −">−</button></div>
     <div id="bar">
-      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/cyclo_1463865" target="_blank" title="Ouvrir la carte uMap">🗺 Carte</a>
+      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/itineraire-velo_123456" target="_blank" title="Ouvrir la carte uMap">🗺 Carte</a>
       <button id="btGal">Galerie : OFF</button>
       <button id="btSize">Taille : 2</button>
     </div>
@@ -173,7 +174,12 @@ function renderMarkers() {
     el.title = m.name + " — " + m.date;
     el.style.left = lon2x(m.lon, zoom) + "px";
     el.style.top = lat2y(m.lat, zoom) + "px";
-    el.addEventListener("click", e => { e.stopPropagation(); openGal(m.i); });
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      // ignorer le clic residuel d'un deplacement qui a commence sur le marqueur
+      if (Date.now() - lastDrag < 400) return;
+      openGal(m.i);
+    });
     world.appendChild(el);
     marks.push({ el, i: m.i });
   }
@@ -201,19 +207,24 @@ mapEl.addEventListener("pointermove", e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
-  world.style.transform = "translate(" + (-ox + dx) + "px," + (-oy + dy) + "px)";
+  // drag gauche = ouest : le contenu suit le pointeur, la zone visible
+  // part vers l'ouest (translatation du monde INVERSE du deplacement)
+  world.style.transform = "translate(" + (-ox - dx) + "px," + (-oy - dy) + "px)";
 });
 mapEl.addEventListener("pointerup", e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if (drag.moved) {
+    // drag gauche (dx<0) => centre deplace de dx pixels => OUEST
     const px = lon2x(drag.clon, zoom) + dx;
     const py = lat2y(drag.clat, zoom) + dy;
     clon = px2lon(px); clat = py2lat(py);
+    lastDrag = Date.now();   // evite qu'un clic residuel recentre
     render();
   }
   drag = null; mapEl.classList.remove("drag");
 });
+let lastDrag = 0;
 mapEl.addEventListener("dblclick", () => { if (zoom < ZMAX) { zoom++; render(); } });
 document.getElementById("zin").onclick = () => { if (zoom < ZMAX) { zoom++; render(); } };
 document.getElementById("zout").onclick = () => { if (zoom > ZMIN) { zoom--; render(); } };
@@ -289,8 +300,15 @@ async function load() {
         const dy = Math.abs(lat2y(s, zoom) - lat2y(n, zoom));
         if (dx < mapEl.clientWidth * 0.85 && dy < mapEl.clientHeight * 0.85) break;
       }
+      // zoom intermediaire : +7 niveaux au-dessus du cadrage global
+      // (reglage empirique valide par l'utilisateur)
+      zoom = Math.min(ZMAX, zoom + 7);
     }
     render();
+    // galerie ouverte par defaut sur la premiere photo (le recentrage
+    // n'a lieu qu'ici et aux appuis sur les fleches, jamais pendant
+    // la navigation libre de l'utilisateur)
+    if (media.length) openGal(0);
   } catch (e) { fail(e.message); }
 }
 window.addEventListener("resize", render);
