@@ -158,12 +158,12 @@ function renderTraces() {
 
 // ---------- marqueurs ----------
 function pinSVG(color) {
-  return '<svg class="icon" width="26" height="38" viewBox="0 0 26 38">' +
+  return '<svg class="icon" width="22" height="32" viewBox="0 0 26 38">' +
     '<path d="M13 0C5.8 0 0 5.8 0 13c0 9.2 13 25 13 25s13-15.8 13-25C26 5.8 20.2 0 13 0z" fill="' + color + '" stroke="#fff" stroke-width="1.5"/>' +
     '<circle cx="13" cy="13" r="4.4" fill="#fff"/></svg>';
 }
 function circleSVG(color) {
-  return '<svg class="icon" width="26" height="26" viewBox="0 0 26 26">' +
+  return '<svg class="icon" width="38" height="38" viewBox="0 0 26 26">' +
     '<circle cx="13" cy="13" r="9.5" fill="' + color + '" stroke="#fff" stroke-width="2.5"/>' +
     '<path d="M13 7l4.5 8h-9z" fill="#fff"/></svg>';
 }
@@ -209,19 +209,20 @@ mapEl.addEventListener("pointermove", e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
-  // drag gauche = ouest : le contenu suit le pointeur, la zone visible
-  // part vers l'ouest (translatation du monde INVERSE du deplacement)
-  world.style.transform = "translate(" + (-ox - dx) + "px," + (-oy - dy) + "px)";
+  // sens Google Maps : on SAISIT la carte - elle suit le pointeur.
+  // glisse gauche => le contenu va a gauche => la zone visible part vers l'EST.
+  world.style.transform = "translate(" + (-ox + dx) + "px," + (-oy + dy) + "px)";
 });
 mapEl.addEventListener("pointerup", e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if (drag.moved) {
-    // drag gauche (dx<0) => centre deplace de dx pixels => OUEST
-    const px = lon2x(drag.clon, zoom) + dx;
-    const py = lat2y(drag.clat, zoom) + dy;
+    // glisse gauche (dx<0) => centre deplace de -dx => vers l'EST.
+    // glisse bas (dy>0) => centre deplace de -dy => vers le NORD.
+    const px = lon2x(drag.clon, zoom) - dx;
+    const py = lat2y(drag.clat, zoom) - dy;
     clon = px2lon(px); clat = py2lat(py);
-    lastDrag = Date.now();   // evite qu'un clic residuel recentre
+    lastDrag = Date.now();
     render();
   }
   drag = null; mapEl.classList.remove("drag");
