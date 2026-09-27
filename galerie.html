@@ -6,6 +6,22 @@
 <title>Journal vélo — Galerie</title>
 <style>
   html,body{margin:0;height:100%;font-family:system-ui,Segoe UI,sans-serif;background:#0b0e13;color:#eee;overflow:hidden}
+  #wrap{display:flex;height:100%;width:100%}
+  /* --- partie 1 : galerie (gauche) --- */
+  #side{flex:0 0 var(--side-w,340px);background:#11151d;border-right:1px solid #39445c;display:none;flex-direction:column;min-width:0}
+  #side.on{display:flex}
+  #side.w1{--side-w:min(26vw,340px)}
+  #side.w2{--side-w:min(40vw,680px)}
+  #side.w3{--side-w:min(62vw,1150px)}
+  #side .sh{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #26304a}
+  #side .sh .t{font-size:15px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #media{background:#000;display:flex;align-items:center;justify-content:center;flex:1;min-height:0;position:relative}
+  #media img,#media video{max-width:100%;max-height:100%;display:block}
+  #cap{padding:9px 12px;font-size:13px;color:#c8d2e0;border-top:1px solid #26304a}
+  #cap .nm{font-weight:600;color:#eef2f8;margin-bottom:3px;word-wrap:break-word}
+  #cap .dt{opacity:.75}
+  /* --- partie 2 : carte (droite) --- */
+  #mapwrap{flex:1;position:relative;min-width:0}
   #map{position:absolute;inset:0;overflow:hidden;background:#a9c6d8;cursor:grab}
   #map.drag{cursor:grabbing}
   #world{position:absolute;left:0;top:0;width:0;height:0}
@@ -15,44 +31,41 @@
   .mk .icon{display:block;transition:transform .18s ease;transform-origin:50% 100%;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
   .mk.sel .icon{transform:scale(1.65);filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 6px #fff) drop-shadow(0 2px 3px rgba(0,0,0,.6))}
   .mk.sel{z-index:500}
-  #bar{position:fixed;top:10px;right:10px;display:flex;gap:8px;z-index:1500}
+  /* --- contrôles --- */
+  #zoom{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:1000}
+  #zoom button{width:38px;height:38px;font-size:19px;border-radius:9px;border:1px solid #45526b;background:#1c2230ee;color:#eee;cursor:pointer}
+  #bar{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:1000}
   #bar button{padding:9px 13px;border-radius:9px;border:1px solid #45526b;background:#1c2230ee;color:#eee;font-size:14px;cursor:pointer;backdrop-filter:blur(4px)}
   #bar button:hover{background:#2a3245}
   #bar button.on{background:#2d6a4f;border-color:#40916c}
-  #gal{position:fixed;left:0;top:0;z-index:1001;background:#11151d;border:1px solid #39445c;border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.55);display:none;flex-direction:column;overflow:visible}
-  #gal.on{display:flex}
-  #gal.s1{width:min(340px,92vw)}
-  #gal.s2{width:min(680px,95vw)}
-  #gal.s3{width:min(1150px,94vw)}
-  #media{background:#000;display:flex;align-items:center;justify-content:center;border-radius:inherit;padding:0;overflow:hidden}
-  #media img,#media video{max-width:100%;max-height:60vh;display:block}
-  #gal.s1 #media img,#gal.s1 #media video{max-height:220px}
-  #gal.s3 #media img,#gal.s3 #media video{max-height:72vh}
-  #cap{padding:9px 12px;font-size:13px;color:#c8d2e0;display:flex;justify-content:space-between;gap:10px;cursor:move;user-select:none;touch-action:none}
-  #cap::before{content:"⠿ ";opacity:.55}
-  .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:24px;line-height:1;background:rgba(12,16,24,.82);border:1px solid #4a5876;color:#fff;border-radius:50%;width:46px;height:46px;cursor:pointer;z-index:2;padding:0}
+  .nav{flex:0 0 52px;font-size:22px;background:#1a2130;border:1px solid #445270;color:#fff;cursor:pointer;border-radius:9px}
   .nav:hover{background:#2a3a55}
-  #prev{left:-8px}
-  #next{right:-8px}
-  #gal.s3 #prev{left:10px}
-  #gal.s3 #next{right:10px}
+  #cnt{font-size:12px;opacity:.7;padding:0 4px}
   #err{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#5c1a1a;border:1px solid #a33;color:#fff;padding:10px 16px;border-radius:10px;z-index:2000;display:none;font-size:14px}
-  #zoom{position:fixed;left:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:1500}
-  #zoom button{width:38px;height:38px;font-size:19px;border-radius:9px;border:1px solid #45526b;background:#1c2230ee;color:#eee;cursor:pointer}
 </style>
 </head>
 <body>
-<div id="map"><div id="world"></div></div>
-<div id="zoom"><button id="zin" title="Zoom +">+</button><button id="zout" title="Zoom −">−</button></div>
-<div id="bar">
-  <button id="btGal">Galerie : OFF</button>
-  <button id="btSize">Taille : 2</button>
-</div>
-<div id="gal">
-  <button class="nav" id="prev" title="Précédent (←)">‹</button>
-  <button class="nav" id="next" title="Suivant (→)">›</button>
-  <div id="media"></div>
-  <div id="cap"><span id="capTxt"></span><span id="capDate"></span></div>
+<div id="wrap">
+  <!-- partie 1 : galerie -->
+  <aside id="side" class="w2">
+    <div class="sh">
+      <button class="nav" id="prev" title="Précédent (←)">‹</button>
+      <span class="t" id="tTxt">Galerie</span>
+      <span id="cnt"></span>
+      <button class="nav" id="next" title="Suivant (→)">›</button>
+    </div>
+    <div id="media"></div>
+    <div id="cap"><div class="nm" id="capTxt"></div><div class="dt" id="capDate"></div></div>
+  </aside>
+  <!-- partie 2 : carte -->
+  <div id="mapwrap">
+    <div id="map"><div id="world"></div></div>
+    <div id="zoom"><button id="zin" title="Zoom +">+</button><button id="zout" title="Zoom −">−</button></div>
+    <div id="bar">
+      <button id="btGal">Galerie : OFF</button>
+      <button id="btSize">Taille : 2</button>
+    </div>
+  </div>
 </div>
 <div id="err"></div>
 <script>
@@ -62,14 +75,15 @@ const BASE = "https://gurtsepaqrt87.github.io/gkr63x-g84zwo";
 
 const mapEl = document.getElementById("map");
 const world = document.getElementById("world");
-const gal = document.getElementById("gal");
+const side = document.getElementById("side");
 const mediaEl = document.getElementById("media");
 const capTxt = document.getElementById("capTxt");
 const capDate = document.getElementById("capDate");
+const cntEl = document.getElementById("cnt");
 const errEl = document.getElementById("err");
 
-let zoom = 11, clon = -1.85, clat = 48.15;   // centre initial (Ajuster au voyage)
-let ox = 0, oy = 0;                           // coin haut-gauche du monde (px)
+let zoom = 11, clon = -1.85, clat = 48.15;   // centre initial (cadrage auto ensuite)
+let ox = 0, oy = 0;
 let media = [], marks = [], traces = [];
 let sel = -1, galOn = false, size = 2;
 const ZMIN = 3, ZMAX = 18;
@@ -81,6 +95,11 @@ const lat2y = (lat, z) => {
   const s = Math.sin(lat * Math.PI / 180);
   return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * scale(z);
 };
+function px2lon(px) { return px / scale(zoom) * 360 - 180; }
+function py2lat(py) {
+  const n = Math.PI - 2 * Math.PI * py / scale(zoom);
+  return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+}
 
 // ---------- tuiles ----------
 const tiles = new Map();
@@ -91,7 +110,7 @@ function renderTiles() {
   const max = scale(zoom) / 256;
   for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
     if (y < 0 || y >= max) continue;
-    const wx = ((x % max) + max) % max;   // longitude bouclée
+    const wx = ((x % max) + max) % max;
     const key = zoom + "/" + wx + "/" + y;
     if (tiles.has(key)) continue;
     const img = document.createElement("img");
@@ -104,9 +123,8 @@ function renderTiles() {
     tiles.set(key, img);
   }
 }
-function clearTiles() { tiles.forEach(t => t.remove()); tiles.clear(); }
 
-// ---------- traces (SVG, couleur par journee) ----------
+// ---------- traces ----------
 let svg = null;
 function renderTraces() {
   if (svg) { svg.remove(); svg = null; }
@@ -116,7 +134,7 @@ function renderTraces() {
   for (const t of traces) {
     if (t.geometry.coordinates.length < 2) continue;
     const pts = t.geometry.coordinates
-      .map(c => (lon2x(c[0], zoom) - lon2x(0, zoom)) + "," + lat2y(c[1], zoom))
+      .map(c => lon2x(c[0], zoom) + "," + lat2y(c[1], zoom))
       .join(" ");
     const p = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
     p.setAttribute("points", pts);
@@ -162,7 +180,7 @@ function applySel() {
   marks.forEach(m => m.el.classList.toggle("sel", m.i === sel));
 }
 
-// ---------- rendu global ----------
+// ---------- rendu ----------
 function render() {
   ox = lon2x(clon, zoom) - mapEl.clientWidth / 2;
   oy = lat2y(clat, zoom) - mapEl.clientHeight / 2;
@@ -180,15 +198,12 @@ mapEl.addEventListener("pointermove", e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
-  // le contenu deplace dans le SENS du pointeur (drag droite = est)
   world.style.transform = "translate(" + (-ox + dx) + "px," + (-oy + dy) + "px)";
 });
 mapEl.addEventListener("pointerup", e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if (drag.moved) {
-    // drag vers la droite => navigation vers l'est (sens demande) :
-    // le centre avance dans la direction du deplacement du pointeur.
     const px = lon2x(drag.clon, zoom) + dx;
     const py = lat2y(drag.clat, zoom) + dy;
     clon = px2lon(px); clat = py2lat(py);
@@ -196,47 +211,27 @@ mapEl.addEventListener("pointerup", e => {
   }
   drag = null; mapEl.classList.remove("drag");
 });
-function px2lon(px) { return px / scale(zoom) * 360 - 180; }
-function py2lat(py) {
-  const n = Math.PI - 2 * Math.PI * py / scale(zoom);
-  return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
-}
 mapEl.addEventListener("dblclick", () => { if (zoom < ZMAX) { zoom++; render(); } });
 document.getElementById("zin").onclick = () => { if (zoom < ZMAX) { zoom++; render(); } };
 document.getElementById("zout").onclick = () => { if (zoom > ZMIN) { zoom--; render(); } };
 
 // ---------- galerie ----------
-let galPos = null;   // position libre (deplacee par l'utilisateur)
-function clampGal() {
-  if (!galPos) return;
-  const W = innerWidth, H = innerHeight;
-  const w = Math.min(gal.offsetWidth, W), h = gal.offsetHeight || 300;
-  galPos.x = Math.max(0, Math.min(galPos.x, W - w));
-  galPos.y = Math.max(0, Math.min(galPos.y, H - Math.min(h, H - 1)));
-  gal.style.left = galPos.x + "px";
-  gal.style.top = galPos.y + "px";
-}
-function defaultGalPos() {
-  const w = { 1: 340, 2: 680, 3: 1150 }[size] || 680;
-  const gw = Math.min(w, innerWidth);
-  galPos = { x: Math.round((innerWidth - gw) / 2), y: Math.round(innerHeight * 0.12) };
-  clampGal();
-}
 function openGal(i) {
   if (!media.length) return;
   sel = Math.max(0, Math.min(media.length - 1, i));
-  galOn = true; gal.classList.add("on"); updateBtn();
-  if (!galPos) defaultGalPos(); else clampGal();
+  galOn = true; side.classList.add("on"); updateBtn();
   const m = media[sel];
   mediaEl.innerHTML = m.type === "video"
-    ? '<video src="' + m.url + '" controls playsinline style="max-height:52vh"></video>'
+    ? '<video src="' + m.url + '" controls playsinline></video>'
     : '<img src="' + m.url + '" alt="">';
   capTxt.textContent = m.commentaire || m.name;
   capDate.textContent = m.date;
+  cntEl.textContent = (sel + 1) + " / " + media.length;
   applySel();
-  clon = m.lon; clat = m.lat; render();
+  clon = m.lon; clat = m.lat;
+  render();   // la carte occupe deja toute la partie droite : recentrage complet visible
 }
-function closeGal() { galOn = false; sel = -1; gal.classList.remove("on"); mediaEl.innerHTML = ""; applySel(); updateBtn(); }
+function closeGal() { galOn = false; sel = -1; side.classList.remove("on"); mediaEl.innerHTML = ""; applySel(); updateBtn(); }
 function updateBtn() {
   document.getElementById("btGal").textContent = "Galerie : " + (galOn ? "ON" : "OFF");
   document.getElementById("btGal").classList.toggle("on", galOn);
@@ -244,28 +239,13 @@ function updateBtn() {
 document.getElementById("btGal").onclick = () => galOn ? closeGal() : openGal(0);
 document.getElementById("btSize").onclick = () => {
   size = size % 3 + 1;
-  gal.classList.remove("s1", "s2", "s3");
-  gal.classList.add("s" + size);
+  side.classList.remove("w1", "w2", "w3");
+  side.classList.add("w" + size);
   document.getElementById("btSize").textContent = "Taille : " + size;
-  clampGal();
+  render();   // la carte a change de largeur : recalcul des marges
 };
-// deplacement libre de la galerie par sa barre de titre (⠿)
-const cap = document.getElementById("cap");
-let gdrag = null;
-cap.addEventListener("pointerdown", e => {
-  gdrag = { x: e.clientX, y: e.clientY, gx: galPos.x, gy: galPos.y };
-  cap.setPointerCapture(e.pointerId); e.preventDefault();
-});
-cap.addEventListener("pointermove", e => {
-  if (!gdrag) return;
-  galPos.x = gdrag.gx + (e.clientX - gdrag.x);
-  galPos.y = gdrag.gy + (e.clientY - gdrag.y);
-  clampGal();
-});
-cap.addEventListener("pointerup", () => { gdrag = null; });
-document.getElementById("prev").onclick = e => { e.stopPropagation(); openGal(sel - 1); };
-document.getElementById("next").onclick = e => { e.stopPropagation(); openGal(sel + 1); };
-gal.addEventListener("click", e => e.stopPropagation());
+document.getElementById("prev").onclick = () => openGal(sel - 1);
+document.getElementById("next").onclick = () => openGal(sel + 1);
 document.addEventListener("keydown", e => {
   if (!galOn) return;
   if (e.key === "ArrowLeft") openGal(sel - 1);
@@ -294,12 +274,10 @@ async function load() {
         });
       }
     }
-    // tri chronologique (date + nom horodate)
     media.sort((a, b) => (a.date + "|" + a.name).localeCompare(b.date + "|" + b.name));
     media.forEach((m, i) => m.i = i);
     try { traces = (await fetchJ("trace.geojson")).features || []; } catch (e) { traces = []; }
     if (media.length) {
-      // cadrage initial sur l'ensemble des medias
       let n = 90, s = -90, w = 180, e = -180;
       for (const m of media) { n = Math.max(n, m.lat); s = Math.min(s, m.lat); w = Math.min(w, m.lon); e = Math.max(e, m.lon); }
       clat = (n + s) / 2; clon = (w + e) / 2;
@@ -312,7 +290,7 @@ async function load() {
     render();
   } catch (e) { fail(e.message); }
 }
-window.addEventListener("resize", () => { clampGal(); render(); });
+window.addEventListener("resize", render);
 load();
 </script>
 </body>
