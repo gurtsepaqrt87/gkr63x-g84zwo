@@ -67,7 +67,7 @@
     <div id="map"><div id="world"></div></div>
     <div id="zoom"><button id="zin" title="Zoom +">+</button><button id="zout" title="Zoom −">−</button></div>
     <div id="bar">
-      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/cyclo_1463865" target="_blank" title="Ouvrir la carte uMap">🗺 Carte</a>
+      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/itineraire-velo_123456" target="_blank" title="Ouvrir la carte uMap">🗺 Carte</a>
       <button id="btGal">Galerie : OFF</button>
       <button id="btSize">Taille : 2</button>
     </div>
@@ -271,7 +271,10 @@ document.addEventListener("keydown", e => {
 
 // ---------- chargement des cumulatifs ----------
 async function fetchJ(name) {
-  const r = await fetch(BASE + "/" + name);
+  // parametre anti-cache : chaque ouverture de page retelecharge les
+  // cumulatifs a jour (sinon le navigateur sert la version en cache,
+  // ex. apres une purge les anciennes dates restent affichees)
+  const r = await fetch(BASE + "/" + name + "?v=" + Date.now());
   if (!r.ok) throw new Error(name + " : HTTP " + r.status);
   return r.json();
 }
