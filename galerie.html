@@ -229,6 +229,27 @@ mapEl.addEventListener("pointerup", e => {
 });
 let lastDrag = 0;
 mapEl.addEventListener("dblclick", () => { if (zoom < ZMAX) { zoom++; render(); } });
+// zoom molette : centre sur le point du curseur (sens Google Maps :
+// molette haut = zoom in, molette bas = zoom out)
+mapEl.addEventListener("wheel", e => {
+  e.preventDefault();
+  const dir = e.deltaY < 0 ? 1 : -1;
+  if ((dir > 0 && zoom >= ZMAX) || (dir < 0 && zoom <= ZMIN)) return;
+  // garder le point sous le curseur fixe : coordonnees avant/apres
+  const rect = mapEl.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const px = ox + mx, py = oy + my;         // position monde du curseur
+  clon = px2lon(px); clat = py2lat(py);     // centre provisoire = curseur
+  zoom += dir;
+  render();
+  // recentrer pour que le point curseur reste a l'ecran ou il etait :
+  const px2 = lon2x(clon, zoom), py2 = lat2y(clat, zoom);
+  const newOx = px2 - mx, newOy = py2 - my; // origine monde desiree
+  // centre final correspondant a cette origine :
+  clon = px2lon(newOx + mapEl.clientWidth / 2);
+  clat = py2lat(newOy + mapEl.clientHeight / 2);
+  render();
+}, { passive: false });
 document.getElementById("zin").onclick = () => { if (zoom < ZMAX) { zoom++; render(); } };
 document.getElementById("zout").onclick = () => { if (zoom > ZMIN) { zoom--; render(); } };
 
