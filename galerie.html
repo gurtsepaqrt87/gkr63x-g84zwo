@@ -360,7 +360,13 @@ async function loadComments() {
 // dans l'URL de votre navigateur (jamais dans le fichier partage) :
 // famille/amis n'ont pas de #adm= -> pas de zone de saisie.
 const ADM = location.hash.startsWith("#adm=") ? location.hash.slice(5) : null;
-const REPO = (() => { try { const p = new URL(BASE).pathname.split("/"); return p[1] + "/" + p[2]; } catch (e) { return null; } })();
+// ex. BASE "https://user.github.io/projet" -> depot "user/projet".
+// (filter(Boolean) indispensable : split laisse des chaines vides
+//  autour du chemin, sinon l'API appelle /repos/projet/undefined -> 404)
+const REPO = (() => { try {
+  const p = new URL(BASE).pathname.split("/").filter(Boolean);
+  return p.length >= 2 ? p[0] + "/" + p[1] : null;
+} catch (e) { return null; } })();
 if (ADM) document.getElementById("admBox").classList.add("on");
 document.getElementById("admSave").onclick = async () => {
   const btn = document.getElementById("admSave"), m = media[sel];
