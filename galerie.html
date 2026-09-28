@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="fr">
-<!-- VERSION v5.6 : chercher "v5.6" (Ctrl+U, Ctrl+F).
-     v5.6 = laptop : bouton date elargi (128 px), largeur minimale de la
-     fenetre photos (348 px) pour que l'en-tete tienne toujours, meme
-     avec une video basse resolution en portrait (media du 28/09). -->
+<!-- VERSION v5.7 : chercher "v5.7" (Ctrl+U, Ctrl+F).
+     v5.7 = laptop : largeur fenetre photos FIXE (~ photo paysage, cappee
+     2/3 ecran, plancher 348 px) - plus de reduction sur les videos :
+     le bouton > reste immobile (clic souris sans deplacement). La
+     poignee garde priorite apres un glisse utilisateur (userResized). -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -374,20 +375,18 @@ document.getElementById("zin").onclick = () => { if (zoom < ZMAX) { zoom++; rend
 document.getElementById("zout").onclick = () => { if (zoom > ZMIN) { zoom--; render(); } };
 
 // ---------- galerie ----------
+// v5.7 : largeur de fenetre FIXE (plus d'ajustement au media affiche).
+// Objectif : le bouton ">" reste toujours au meme endroit (confort de
+// clic sans deplacer la souris) et une video en portrait ne retricit
+// plus la fenetre. La largeur est fixee une fois, a la taille type
+// d'une photo en paysage (photos du projet : ~1600 px de large, cappee
+// a 2/3 de l'ecran et au plancher de l'en-tete). L'utilisateur garde
+// la main via la poignee (userResized), et le plancher 348 px reste
+// applique par setSideW.
 function fitSideToMedia(el, isVideo) {
-  // largeur galerie = resolution du media (cappee a 2/3 de l'ecran) ;
-  // abandonne l'ajustement auto des que l'utilisateur a glisse la poignee.
-  // Sur smartphone : sans objet (portrait = hauteurs CSS, et l'ecran
-  // est de toute facon plus etroit que la photo) -> rien a faire.
   if (userResized || MOBILE) return;
-  const apply = w => { if (w > 0) setSideW(w); render(); };
-  if (isVideo) {
-    if (el.videoWidth) apply(el.videoWidth);
-    else el.addEventListener("loadedmetadata", () => apply(el.videoWidth), { once: true });
-  } else {
-    if (el.naturalWidth) apply(el.naturalWidth);
-    else el.addEventListener("load", () => apply(el.naturalWidth), { once: true });
-  }
+  setSideW(1600);   // largeur "photo paysage" type ; setSideW cappe/minore
+  render();
 }
 function openGal(i) {
   if (!media.length) return;
