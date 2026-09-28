@@ -34,12 +34,23 @@
     /* les gestes remplacent les boutons : pince/double-tap (carte) et
        glisse (photos) -> fleches et zoom retires sur smartphone */
     #prev,#next,#zoom{display:none}
-    select.nav{width:120px;height:44px;font-size:13px}
-    #bar a{padding:8px 11px;font-size:13px;border-width:1px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
+    /* l'URL/nom de fichier n'apporte rien sur mobile : date deja dans
+       le menu, le commentaire reste (bloc #cmt) */
+    #cap .nm,#cap .dt{display:none}
+    select.nav{width:104px;height:40px;font-size:12.5px;padding-right:20px;
+      /* fleche "menu deroulant" dessinee (appearance:none l'a retiree) */
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 6px center}
+    #bar a{padding:7px 9px;font-size:12px;border-width:1px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
     #cap{font-size:12px}
     #cmt{font-size:13.5px;max-height:3.4em}
     #admBox button{height:38px;font-size:14px}
+    /* boutons d'entete photo (mobile seulement) : bascule carte + layout */
+    #hdFlip,#hdLayout{display:flex;flex:0 0 40px;height:40px;font-size:17px;
+      align-items:center;justify-content:center}
   }
+  /* hors mobile, les boutons d'entete photo n'existent pas visuellement */
+  #hdFlip,#hdLayout{display:none}
   /* ecran tres etroit (portrait) : MONOFENETRE - photo OU carte,
      bascule par glisse vertical (class .showmap geree en JS) */
   #wrap.single{flex-direction:column}
@@ -50,8 +61,16 @@
   #wrap.single.showmap #mapwrap{flex:1}
   /* bouton bascule photo<->carte, visible uniquement en monofenetre */
   #btFlip{display:none}
-  #wrap.single.showmap #btFlip{display:flex;position:absolute;left:10px;bottom:14px;z-index:1001;width:52px;height:52px;border-radius:14px;border:2px solid #b35300;background:#ff7a00cc;color:#fff;font-size:26px;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(3px)}
+  #wrap.single.showmap #btFlip{display:flex;position:absolute;left:10px;bottom:14px;z-index:1001;width:46px;height:46px;border-radius:12px;border:2px solid #b35300;background:#ff7a00cc;color:#fff;font-size:22px;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(3px)}
   #wrap.single.showmap #btFlip:hover{background:#ffa040}
+  /* bouton layout 2-fenetres (mobile) : sur la carte, a cote de la bascule ;
+     visible des qu'on est en mode mobile (carte affichee) */
+  #btLayoutM{display:none}
+  @media (max-width:820px){
+    #wrap #mapwrap:not(:only-child) #btLayoutM{display:none}
+    #btLayoutM{display:flex;position:absolute;left:64px;bottom:14px;z-index:1001;width:46px;height:46px;border-radius:12px;border:2px solid #b35300;background:#ff7a00cc;color:#fff;font-size:18px;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(3px)}
+    #btLayoutM:hover{background:#ffa040}
+  }
   /* --- partie 2 : carte (droite) --- */
   #mapwrap{flex:1;position:relative;min-width:0}
   #map{position:absolute;inset:0;overflow:hidden;background:#a9c6d8;cursor:grab;touch-action:none}
@@ -98,6 +117,8 @@
     <div class="sh">
       <button class="nav" id="prev" title="Précédent (←)">‹</button>
       <select class="nav" id="btDate" title="Journée affichée"></select>
+      <button class="nav" id="hdFlip" title="Voir la carte">🗺</button>
+      <button class="nav" id="hdLayout" title="Affichage 2 fenêtres">⧉</button>
       <span id="cnt"></span>
       <button class="nav" id="next" title="Suivant (→)">›</button>
     </div>
@@ -113,9 +134,10 @@
   <div id="mapwrap">
     <div id="map"><div id="world"></div></div>
     <button id="btFlip" title="Revenir à la photo">⇅</button>
+    <button id="btLayoutM" title="Affichage 2 fenêtres">⧉</button>
     <div id="zoom"><button id="zin" title="Zoom +">+</button><button id="zout" title="Zoom −">−</button></div>
     <div id="bar">
-      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/itineraire-velo_123456" target="_blank" title="Ouvrir la carte uMap">🗺 Carte uMap</a>
+      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/cyclo_1463865" target="_blank" title="Ouvrir la carte uMap">🗺 Carte uMap</a>
     </div>
   </div>
 </div>
@@ -369,7 +391,10 @@ function openGal(i) {
   let el;
   if (m.type === "video") {
     el = document.createElement("video");
-    el.src = m.url; el.controls = true; el.playsInline = true;
+    // "#t=0.1" : fragment media - le navigateur affiche l'image de la
+    // video a 0,1 s en vignette (poster) au lieu du fond gris par defaut
+    el.src = m.url + "#t=0.1"; el.controls = true; el.playsInline = true;
+    el.preload = "metadata";
     fitSideToMedia(el, true);
   } else {
     el = document.createElement("img");
@@ -501,17 +526,31 @@ document.getElementById("admSave").onclick = async () => {
 // Photo OU carte, bascule par glisse VERTICAL sur l'un des deux panneaux.
 // Le glisse horizontal sur la photo reste la navigation precedente/suivant.
 const wrapEl = document.getElementById("wrap");
+let layout2 = false;   // preference mobile : true = forcer 2 fenetres
+function applyLayout() {
+  // monofenetre si ecran tres etroit ET pas de preference 2-fenetres
+  wrapEl.classList.toggle("single", MOBILE && innerWidth <= 520 && !layout2);
+}
 function updateSingle() {
-  wrapEl.classList.toggle("single", MOBILE && innerWidth <= 520);
+  applyLayout();
   render();
 }
 function toggleMap() {
   wrapEl.classList.toggle("showmap");
   render();
 }
+function toggleLayout() {
+  layout2 = !layout2;
+  applyLayout();
+  render();
+}
 updateSingle();
 window.addEventListener("resize", updateSingle);
+// cablage des boutons mobiles (invisibles sur laptop) :
 document.getElementById("btFlip").onclick = () => wrapEl.classList.remove("showmap");
+document.getElementById("hdFlip").onclick = () => { wrapEl.classList.add("showmap"); render(); };
+document.getElementById("hdLayout").onclick = toggleLayout;
+document.getElementById("btLayoutM").onclick = toggleLayout;
 // glisse vertical > 60 px sur la photo ou la carte = bascule panneau
 function bindVerticalSwipe(el) {
   let s = null;
