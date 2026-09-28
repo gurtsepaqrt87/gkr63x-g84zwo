@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="fr">
-<!-- VERSION v5.11 : chercher "v5.11" (Ctrl+U, Ctrl+F).
-     v5.11 = FIX chevron mobile : la boite .selbox impose sa largeur
-     (128 laptop / 124 mobile) et le select la remplit a 100 % - les
-     deux ne peuvent plus diverger, le chevron est DANS le bouton
-     orange sur les deux modes (sur Android le select ne suivait pas
-     exactement les px, exilant le chevron hors du fond orange). -->
+<!-- VERSION v5.12 : chercher "v5.12" (Ctrl+U, Ctrl+F).
+     v5.12 = FIX chevron DEFINITIF : le fond orange est sur .selbox (la
+     boite), le select devient transparent dedans - le chevron est dans
+     le bouton par construction, aucun rendu natif ne peut l'exiler
+     (v5.10/v5.11 calaient le ▾ sur une boite dont le select natif
+     divergeait legèrement selon navigateur/zoom). -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,17 +54,15 @@
   .nav{flex:0 0 64px;height:56px;font-size:28px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,.45)}
   .nav:hover{background:#ffa040}
   .nav:active{background:#cc6200}
-  /* menu deroulant Date : meme famille visuelle orange que les fleches ;
-     largeur libre, fleches intouchables. Le chevron est un VRAI element
-     overlay (Chrome Android ignore background-image sur <select>). */
+  /* menu deroulant Date : depuis v5.12, le VISUEL (orange, bordure,
+     arrondi, ombre) est sur .selbox et le select est TRANSPARENT dedans.
+     Le chevron est dans la boite orange PAR CONSTRUCTION : aucun rendu
+     natif du select (bordures, metriques Android) ne peut l'exiler. */
   .selwrap{display:flex;flex:1 1 auto;min-width:0;justify-content:center}
-  /* selbox : boite qui EPAUSSERTE le bouton date (shrink-to-fit) - le
-     chevron absolute se cale sur elle, donc TOUJOURS au bord du bouton,
-     jamais au bord du conteneur (bug v5.5-v5.9 : chevron exile a droite) */
-  .selbox{position:relative;display:inline-flex;min-width:0;width:128px}
-  select.nav{width:100%;height:56px;font-size:16px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;text-align:center;text-align-last:center;padding:0 24px 0 6px;box-shadow:0 3px 8px rgba(0,0,0,.45);-webkit-appearance:none;appearance:none}
+  .selbox{position:relative;display:inline-flex;flex:0 0 auto;width:128px;height:56px;background:#ff7a00;border:2px solid #b35300;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,.45)}
+  .selbox:hover{background:#ffa040}
+  select.nav{flex:1;min-width:0;height:100%;background:transparent;border:none;font-size:16px;font-weight:700;color:#fff;cursor:pointer;text-align:center;text-align-last:center;padding:0 24px 0 6px;-webkit-appearance:none;appearance:none}
   .selArrow{position:absolute;right:7px;top:50%;transform:translateY(-50%);pointer-events:none;color:#fff;font-size:15px;font-weight:700;line-height:1}
-  select.nav:hover{background:#ffa040}
   select.nav option{background:#1c2230;color:#eee;font-weight:400}
   /* zone admin (visible uniquement en mode #adm=) : saisie commentaire */
   #admBox{padding:8px 12px;border-top:1px solid #26304a;display:none;flex-direction:column;gap:6px}
@@ -99,8 +97,8 @@
     /* l'URL/nom de fichier n'apporte rien sur mobile : date deja dans
        le menu, le commentaire reste (bloc #cmt) */
     #cap .nm,#cap .dt{display:none}
-    .selbox{width:124px}
-    select.nav{width:100%;height:40px;font-size:12.5px;padding-right:22px}
+    .selbox{width:124px;height:40px}
+    select.nav{font-size:12.5px;padding-right:22px}
     .selArrow{right:6px;font-size:13px}
     #bar a{padding:7px 9px;font-size:12px;border-width:1px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
     #cap{font-size:12px}
