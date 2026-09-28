@@ -19,6 +19,9 @@
   #cap{padding:9px 12px;font-size:13px;color:#c8d2e0;border-top:1px solid #26304a}
   #cap .nm{font-weight:600;color:#eef2f8;margin-bottom:3px;word-wrap:break-word}
   #cap .dt{opacity:.75}
+  /* commentaire mis en evidence : bloc distinct, plus grand, lisible */
+  #cmt{display:none;margin-top:6px;padding:8px 11px;background:#1c2740;border-left:4px solid #ff7a00;border-radius:0 8px 8px 0;font-size:15.5px;line-height:1.45;color:#ffe9c9;word-wrap:break-word}
+  #cmt.on{display:block}
   /* --- partie 2 : carte (droite) --- */
   #mapwrap{flex:1;position:relative;min-width:0}
   #map{position:absolute;inset:0;overflow:hidden;background:#a9c6d8;cursor:grab}
@@ -69,7 +72,7 @@
       <button class="nav" id="next" title="Suivant (→)">›</button>
     </div>
     <div id="media"></div>
-    <div id="cap"><div class="nm" id="capTxt"></div><div class="dt" id="capDate"></div></div>
+    <div id="cap"><div class="nm" id="capTxt"></div><div class="dt" id="capDate"></div><div id="cmt"></div></div>
     <div id="admBox">
       <textarea id="admTxt" placeholder="Commentaire (publié dans photos.csv)…"></textarea>
       <button class="nav" id="admSave">💾 Enregistrer</button>
@@ -81,7 +84,7 @@
     <div id="map"><div id="world"></div></div>
     <div id="zoom"><button id="zin" title="Zoom +">+</button><button id="zout" title="Zoom −">−</button></div>
     <div id="bar">
-      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/itineraire-velo_123456" target="_blank" title="Ouvrir la carte uMap">🗺 Carte uMap</a>
+      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/cyclo_1463865" target="_blank" title="Ouvrir la carte uMap">🗺 Carte uMap</a>
     </div>
   </div>
 </div>
@@ -303,8 +306,11 @@ function openGal(i) {
     fitSideToMedia(el, false);
   }
   mediaEl.appendChild(el);
-  capTxt.textContent = m.commentaire || m.name;
+  capTxt.textContent = m.name;
   capDate.textContent = m.date;
+  const cmtEl = document.getElementById("cmt");
+  cmtEl.textContent = m.commentaire || "";
+  cmtEl.classList.toggle("on", !!m.commentaire);
   cntEl.textContent = (sel + 1) + " / " + media.length;
   // zone admin : pre-remplir le champ commentaire si mode admin
   if (ADM) { document.getElementById("admTxt").value = m.commentaire || ""; }
@@ -356,7 +362,11 @@ async function loadComments() {
       const c = cmtByUrl[m.url];
       if (c && c !== m.commentaire) { m.commentaire = c; changed = true; }
     }
-    if (changed && sel >= 0) capTxt.textContent = media[sel].commentaire || media[sel].name;
+    if (changed && sel >= 0) {
+      const c = document.getElementById("cmt");
+      c.textContent = media[sel].commentaire || "";
+      c.classList.toggle("on", !!media[sel].commentaire);
+    }
   } catch (e) { /* photos.csv absent : commentaires geojson seulement */ }
 }
 // ---------- mode ADMIN : #adm=<token> dans l'URL ----------
@@ -409,7 +419,8 @@ document.getElementById("admSave").onclick = async () => {
     });
     if (!p.ok) throw new Error("commit : HTTP " + p.status);
     m.commentaire = txt; cmtByUrl[m.url] = txt;
-    capTxt.textContent = txt || m.name;
+    const c = document.getElementById("cmt");
+    c.textContent = txt; c.classList.toggle("on", !!txt);
     btn.textContent = "✔ Enregistré";
   } catch (e) { btn.textContent = "✖ Erreur : " + e.message; }
   setTimeout(() => btn.textContent = "💾 Enregistrer", 3000);
