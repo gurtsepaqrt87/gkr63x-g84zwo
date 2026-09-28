@@ -44,10 +44,16 @@
   .nav{flex:0 0 64px;height:56px;font-size:28px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,.45)}
   .nav:hover{background:#ffa040}
   .nav:active{background:#cc6200}
-  /* menu deroulant Date : meme famille visuelle orange que les fleches */
-  select.nav{flex:1 1 auto;height:56px;font-size:17px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.45);-webkit-appearance:none;appearance:none}
+  /* menu deroulant Date : meme famille visuelle orange que les fleches ;
+     largeur libre (juste ce qu'il faut pour la date), fleches intouchables */
+  select.nav{flex:1 1 auto;min-width:0;width:110px;max-width:170px;height:56px;font-size:16px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;text-align:center;text-align-last:center;padding:0 6px;box-shadow:0 3px 8px rgba(0,0,0,.45);-webkit-appearance:none;appearance:none}
   select.nav:hover{background:#ffa040}
   select.nav option{background:#1c2230;color:#eee;font-weight:400}
+  /* zone admin (visible uniquement en mode #adm=) : saisie commentaire */
+  #admBox{padding:8px 12px;border-top:1px solid #26304a;display:none;flex-direction:column;gap:6px}
+  #admBox.on{display:flex}
+  #admBox textarea{background:#0d1117;color:#eee;border:1px solid #45526b;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;resize:vertical;min-height:44px}
+  #admBox button{align-self:flex-end;height:42px;font-size:16px}
   #cnt{font-size:12px;opacity:.7;padding:0 4px}
   #err{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#5c1a1a;border:1px solid #a33;color:#fff;padding:10px 16px;border-radius:10px;z-index:2000;display:none;font-size:14px}
 </style>
@@ -64,6 +70,10 @@
     </div>
     <div id="media"></div>
     <div id="cap"><div class="nm" id="capTxt"></div><div class="dt" id="capDate"></div></div>
+    <div id="admBox">
+      <textarea id="admTxt" placeholder="Commentaire (publié dans photos.csv)…"></textarea>
+      <button class="nav" id="admSave">💾 Enregistrer</button>
+    </div>
   </aside>
   <div id="split" title="Glisser pour ajuster la largeur galerie / carte"></div>
   <!-- partie 2 : carte -->
@@ -71,7 +81,7 @@
     <div id="map"><div id="world"></div></div>
     <div id="zoom"><button id="zin" title="Zoom +">+</button><button id="zout" title="Zoom −">−</button></div>
     <div id="bar">
-      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/cyclo_1463865" target="_blank" title="Ouvrir la carte uMap">🗺 Carte uMap</a>
+      <a id="btMap" href="https://umap.openstreetmap.fr/fr/map/itineraire-velo_123456" target="_blank" title="Ouvrir la carte uMap">🗺 Carte uMap</a>
     </div>
   </div>
 </div>
@@ -292,6 +302,8 @@ function openGal(i) {
   capTxt.textContent = m.commentaire || m.name;
   capDate.textContent = m.date;
   cntEl.textContent = (sel + 1) + " / " + media.length;
+  // zone admin : pre-remplir le champ commentaire si mode admin
+  if (ADM) { document.getElementById("admTxt").value = m.commentaire || ""; }
   // le menu Date suit le media affiche
   const dSel = document.getElementById("btDate");
   if (dSel.value !== m.date) dSel.value = m.date;
@@ -299,6 +311,102 @@ function openGal(i) {
   clon = m.lon; clat = m.lat;
   render();   // recentrage uniquement a l'affichage d'un media
 }
+// ---------- commentaires (source : photos.csv, lu directement) ----------
+// Les commentaires vivent dans photos.csv (publie chaque soir) : la page
+// les lit a la volee, ils s'affichent donc pour tout le monde SANS attendre
+// la regeneration des geojson. Le champ url du CSV fait la correspondance.
+let cmtByUrl = {};
+function parseCSVLine(line) {
+  const out = []; let cur = "", q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') q = false;
+      else cur += c;
+    } else {
+      if (c === '"') q = true;
+      else if (c === ",") { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+async function loadComments() {
+  try {
+    const r = await fetch(BASE + "/photos.csv?v=" + Date.now());
+    if (!r.ok) return;
+    const lines = (await r.text()).split(/\r?\n/).filter(Boolean);
+    const head = parseCSVLine(lines[0]);
+    const iDate = head.indexOf("date"), iNom = head.indexOf("nom"),
+          iUrl = head.indexOf("url"), iCmt = head.indexOf("commentaire");
+    if (iUrl < 0 || iCmt < 0) return;
+    for (const l of lines.slice(1)) {
+      const f = parseCSVLine(l);
+      if (f.length >= head.length && f[iCmt]) cmtByUrl[f[iUrl]] = f[iCmt];
+    }
+    // appliquer aux medias deja charges et rafraichir l'affichage
+    let changed = false;
+    for (const m of media) {
+      const c = cmtByUrl[m.url];
+      if (c && c !== m.commentaire) { m.commentaire = c; changed = true; }
+    }
+    if (changed && sel >= 0) capTxt.textContent = media[sel].commentaire || media[sel].name;
+  } catch (e) { /* photos.csv absent : commentaires geojson seulement */ }
+}
+// ---------- mode ADMIN : #adm=<token> dans l'URL ----------
+// Le token (PAT GitHub a portee depot, Contents read+write) ne figure QUE
+// dans l'URL de votre navigateur (jamais dans le fichier partage) :
+// famille/amis n'ont pas de #adm= -> pas de zone de saisie.
+const ADM = location.hash.startsWith("#adm=") ? location.hash.slice(5) : null;
+const REPO = (() => { try { const p = new URL(BASE).pathname.split("/"); return p[1] + "/" + p[2]; } catch (e) { return null; } })();
+if (ADM) document.getElementById("admBox").classList.add("on");
+document.getElementById("admSave").onclick = async () => {
+  const btn = document.getElementById("admSave"), m = media[sel];
+  if (!ADM || !REPO || !m) return;
+  const txt = document.getElementById("admTxt").value.trim();
+  btn.textContent = "…";
+  try {
+    // 1. relire le CSV courant via l'API (donne aussi le sha du fichier)
+    const g = await fetch("https://api.github.com/repos/" + REPO + "/contents/photos.csv",
+                          { headers: { Authorization: "Bearer " + ADM, Accept: "application/vnd.github+json" } });
+    if (!g.ok) throw new Error("lecture CSV : HTTP " + g.status);
+    const meta = await g.json();
+    const lines = new TextDecoder().decode(
+      Uint8Array.from(atob(meta.content.replace(/\n/g, "")), c => c.charCodeAt(0)))
+      .split(/\r?\n/).filter(Boolean);
+    // 2. mettre a jour la ligne du media (cle : url)
+    const head = parseCSVLine(lines[0]);
+    const iUrl = head.indexOf("url"), iCmt = head.indexOf("commentaire");
+    let hit = false;
+    for (let i = 1; i < lines.length; i++) {
+      const f = parseCSVLine(lines[i]);
+      if (f[iUrl] === m.url) {
+        // re-encoder la ligne avec le commentaire cite s'il contient virgules/quotes
+        f[iCmt] = txt; hit = true;
+        lines[i] = f.map(x => /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x).join(",");
+      }
+    }
+    if (!hit) throw new Error("ligne introuvable dans photos.csv");
+    // 3. commit via l'API (seul photos.csv est republie - pas les medias)
+    const body = lines.join("\n") + "\n";
+    const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(body)));
+    const p = await fetch("https://api.github.com/repos/" + REPO + "/contents/photos.csv", {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + ADM, Accept: "application/vnd.github+json" },
+      body: JSON.stringify({
+        message: "commentaire " + m.name + " (" + m.date + ")",
+        content: b64, sha: meta.sha })
+    });
+    if (!p.ok) throw new Error("commit : HTTP " + p.status);
+    m.commentaire = txt; cmtByUrl[m.url] = txt;
+    capTxt.textContent = txt || m.name;
+    btn.textContent = "✔ Enregistré";
+  } catch (e) { btn.textContent = "✖ Erreur : " + e.message; }
+  setTimeout(() => btn.textContent = "💾 Enregistrer", 3000);
+};
+
 // ---------- menu Date (journees ayant des donnees) ----------
 function buildDateMenu() {
   const dates = [...new Set(media.map(m => m.date).filter(Boolean))].sort();
@@ -382,8 +490,9 @@ async function load() {
       zoom = Math.min(ZMAX, zoom + 7);
     }
     render();
-    // galerie ouverte par defaut sur la journee la plus RECENTE ayant
-    // des donnees (le menu Date est pret et pre-selectionne dessus)
+    // commentaires : la page lit photos.csv en direct (source de verite),
+    // puis ouvre la galerie sur la journee la plus RECENTE
+    await loadComments();
     buildDateMenu();
     if (media.length) {
       const lastDate = [...new Set(media.map(m => m.date))].sort().pop();
