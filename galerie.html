@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="fr">
-<!-- VERSION v5.4-smartphone-fix : pour verifier la version deployee,
-     chercher "v5.4" (Ctrl+U, Ctrl+F). Incrementer a CHAQUE livraison.
-     v5.4 = CORRECTIF CSS : section mobile deplacee en fin de feuille
-     (a specificite egale la derniere regle gagne ; placee avant les
-     regles de base, elle etait ecrasee : zoom visibles, hdFlip masques
-     sur smartphone). Contenu identique a v5.3 sinon. -->
+<!-- VERSION v5.5 : pour verifier la version deployee, chercher "v5.5"
+     (Ctrl+U, Ctrl+F). Incrementer a CHAQUE livraison.
+     v5.5 = vue laptop : chevron ▾ sur le bouton date (overlay, marche
+     partout), date centree entre < et >, bouton > colle au bord droit
+     de la fenetre photos. Mobile : chevron overlay egalement (remplace
+     le background-image ignore par Chrome Android). -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,8 +55,11 @@
   .nav:hover{background:#ffa040}
   .nav:active{background:#cc6200}
   /* menu deroulant Date : meme famille visuelle orange que les fleches ;
-     largeur libre (juste ce qu'il faut pour la date), fleches intouchables */
-  select.nav{flex:1 1 auto;min-width:0;width:110px;max-width:170px;height:56px;font-size:16px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;text-align:center;text-align-last:center;padding:0 6px;box-shadow:0 3px 8px rgba(0,0,0,.45);-webkit-appearance:none;appearance:none}
+     largeur libre, fleches intouchables. Le chevron est un VRAI element
+     overlay (Chrome Android ignore background-image sur <select>). */
+  .selwrap{position:relative;display:flex;flex:1 1 auto;min-width:0;justify-content:center}
+  select.nav{width:110px;max-width:170px;height:56px;font-size:16px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;text-align:center;text-align-last:center;padding:0 24px 0 6px;box-shadow:0 3px 8px rgba(0,0,0,.45);-webkit-appearance:none;appearance:none}
+  .selArrow{position:absolute;right:7px;top:50%;transform:translateY(-50%);pointer-events:none;color:#fff;font-size:15px;font-weight:700;line-height:1}
   select.nav:hover{background:#ffa040}
   select.nav option{background:#1c2230;color:#eee;font-weight:400}
   /* zone admin (visible uniquement en mode #adm=) : saisie commentaire */
@@ -92,10 +95,8 @@
     /* l'URL/nom de fichier n'apporte rien sur mobile : date deja dans
        le menu, le commentaire reste (bloc #cmt) */
     #cap .nm,#cap .dt{display:none}
-    select.nav{width:104px;height:40px;font-size:12.5px;padding-right:20px;
-      /* fleche "menu deroulant" dessinee (appearance:none l'a retiree) */
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-      background-repeat:no-repeat;background-position:right 6px center}
+    select.nav{width:104px;height:40px;font-size:12.5px;padding-right:20px}
+    .selArrow{right:6px;font-size:13px}
     #bar a{padding:7px 9px;font-size:12px;border-width:1px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
     #cap{font-size:12px}
     #cmt{font-size:13.5px;max-height:3.4em}
@@ -108,7 +109,7 @@
   }
   #admBox textarea{background:#0d1117;color:#eee;border:1px solid #45526b;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;resize:vertical;min-height:44px}
   #admBox button{align-self:flex-end;height:42px;font-size:16px}
-  #cnt{font-size:12px;opacity:.7;padding:0 4px}
+  #cnt{font-size:12px;opacity:.7;padding:0 4px;margin-left:auto}   /* margin auto : pousse le compteur et '>' vers le bord droit */
   #err{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#5c1a1a;border:1px solid #a33;color:#fff;padding:10px 16px;border-radius:10px;z-index:2000;display:none;font-size:14px}
 </style>
 </head>
@@ -118,7 +119,7 @@
   <aside id="side">
     <div class="sh">
       <button class="nav" id="prev" title="Précédent (←)">‹</button>
-      <select class="nav" id="btDate" title="Journée affichée"></select>
+      <div class="selwrap"><select class="nav" id="btDate" title="Journée affichée"></select><span class="selArrow">▾</span></div>
       <button class="nav" id="hdFlip" title="Voir la carte">🗺</button>
       <button class="nav" id="hdLayout" title="Affichage 2 fenêtres">⧉</button>
       <span id="cnt"></span>
