@@ -90,6 +90,10 @@
 "use strict";
 // --- Seule ligne a adapter : l'URL GitHub Pages du projet ---
 const BASE = "https://gurtsepaqrt87.github.io/gkr63x-g84zwo";
+// --- 2e ligne a adapter (mode admin) : le depot GitHub "user/projet".
+// NB : non deduisible de BASE (sur user.github.io/projet, l'user est
+// dans le sous-domaine, pas dans le chemin) - d'ou cette constante.
+const REPO = "gurtsepaqrt87/gkr63x-g84zwo";
 
 const mapEl = document.getElementById("map");
 const world = document.getElementById("world");
@@ -360,17 +364,15 @@ async function loadComments() {
 // dans l'URL de votre navigateur (jamais dans le fichier partage) :
 // famille/amis n'ont pas de #adm= -> pas de zone de saisie.
 const ADM = location.hash.startsWith("#adm=") ? location.hash.slice(5) : null;
-// ex. BASE "https://user.github.io/projet" -> depot "user/projet".
-// (filter(Boolean) indispensable : split laisse des chaines vides
-//  autour du chemin, sinon l'API appelle /repos/projet/undefined -> 404)
-const REPO = (() => { try {
-  const p = new URL(BASE).pathname.split("/").filter(Boolean);
-  return p.length >= 2 ? p[0] + "/" + p[1] : null;
-} catch (e) { return null; } })();
 if (ADM) document.getElementById("admBox").classList.add("on");
 document.getElementById("admSave").onclick = async () => {
   const btn = document.getElementById("admSave"), m = media[sel];
-  if (!ADM || !REPO || !m) return;
+  if (!m) return;
+  if (!ADM || !REPO) {   // diagnostiquer au lieu de quitter silencieusement
+    btn.textContent = "✖ Mode admin indisponible (token ou REPO manquant)";
+    setTimeout(() => btn.textContent = "💾 Enregistrer", 4000);
+    return;
+  }
   const txt = document.getElementById("admTxt").value.trim();
   btn.textContent = "…";
   try {
