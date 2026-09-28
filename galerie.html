@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="fr">
-<!-- VERSION v5.3-smartphone : pour verifier la version deployee, chercher
-     "v5.3" (Ctrl+U, Ctrl+F). Incrementer ce marqueur a CHAQUE livraison.
-     v5.3 = boutons hdFlip/hdLayout + btLayoutM, zoom et fleches retires
-     sur mobile, menu Date minimise avec chevron, legende allegee mobile,
-     videos avec image de couverture (#t=0.1) -->
+<!-- VERSION v5.4-smartphone-fix : pour verifier la version deployee,
+     chercher "v5.4" (Ctrl+U, Ctrl+F). Incrementer a CHAQUE livraison.
+     v5.4 = CORRECTIF CSS : section mobile deplacee en fin de feuille
+     (a specificite egale la derniere regle gagne ; placee avant les
+     regles de base, elle etait ecrasee : zoom visibles, hdFlip masques
+     sur smartphone). Contenu identique a v5.3 sinon. -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,54 +29,6 @@
   #cmt{display:none;margin-top:6px;padding:8px 11px;background:#1c2740;border-left:4px solid #ff7a00;border-radius:0 8px 8px 0;font-size:15.5px;line-height:1.45;color:#ffe9c9;word-wrap:break-word}
   #cmt.on{display:block}
   #cmt{max-height:5.2em;overflow-y:auto}   /* meme sur laptop : un long commentaire ne mange pas la photo */
-  /* ---------- adaptation smartphone (tactile / petit ecran) ---------- */
-  @media (orientation: portrait) and (max-width:820px){
-    /* empilement vertical : galerie au-dessus (55%), carte dessous */
-    #wrap{flex-direction:column}
-    #side{--side-w:55%}
-    #split{flex:0 0 10px;cursor:row-resize;border-left:none;border-right:none;border-top:1px solid #39445c;border-bottom:1px solid #39445c}
-  }
-  @media (max-width:820px){
-    /* les gestes remplacent les boutons : pince/double-tap (carte) et
-       glisse (photos) -> fleches et zoom retires sur smartphone */
-    #prev,#next,#zoom{display:none}
-    /* l'URL/nom de fichier n'apporte rien sur mobile : date deja dans
-       le menu, le commentaire reste (bloc #cmt) */
-    #cap .nm,#cap .dt{display:none}
-    select.nav{width:104px;height:40px;font-size:12.5px;padding-right:20px;
-      /* fleche "menu deroulant" dessinee (appearance:none l'a retiree) */
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-      background-repeat:no-repeat;background-position:right 6px center}
-    #bar a{padding:7px 9px;font-size:12px;border-width:1px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
-    #cap{font-size:12px}
-    #cmt{font-size:13.5px;max-height:3.4em}
-    #admBox button{height:38px;font-size:14px}
-    /* boutons d'entete photo (mobile seulement) : bascule carte + layout */
-    #hdFlip,#hdLayout{display:flex;flex:0 0 40px;height:40px;font-size:17px;
-      align-items:center;justify-content:center}
-  }
-  /* hors mobile, les boutons d'entete photo n'existent pas visuellement */
-  #hdFlip,#hdLayout{display:none}
-  /* ecran tres etroit (portrait) : MONOFENETRE - photo OU carte,
-     bascule par glisse vertical (class .showmap geree en JS) */
-  #wrap.single{flex-direction:column}
-  #wrap.single #split{display:none}
-  #wrap.single #side{--side-w:100%}
-  #wrap.single:not(.showmap) #mapwrap{display:none}
-  #wrap.single.showmap #side{display:none}
-  #wrap.single.showmap #mapwrap{flex:1}
-  /* bouton bascule photo<->carte, visible uniquement en monofenetre */
-  #btFlip{display:none}
-  #wrap.single.showmap #btFlip{display:flex;position:absolute;left:10px;bottom:14px;z-index:1001;width:46px;height:46px;border-radius:12px;border:2px solid #b35300;background:#ff7a00cc;color:#fff;font-size:22px;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(3px)}
-  #wrap.single.showmap #btFlip:hover{background:#ffa040}
-  /* bouton layout 2-fenetres (mobile) : sur la carte, a cote de la bascule ;
-     visible des qu'on est en mode mobile (carte affichee) */
-  #btLayoutM{display:none}
-  @media (max-width:820px){
-    #wrap #mapwrap:not(:only-child) #btLayoutM{display:none}
-    #btLayoutM{display:flex;position:absolute;left:64px;bottom:14px;z-index:1001;width:46px;height:46px;border-radius:12px;border:2px solid #b35300;background:#ff7a00cc;color:#fff;font-size:18px;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(3px)}
-    #btLayoutM:hover{background:#ffa040}
-  }
   /* --- partie 2 : carte (droite) --- */
   #mapwrap{flex:1;position:relative;min-width:0}
   #map{position:absolute;inset:0;overflow:hidden;background:#a9c6d8;cursor:grab;touch-action:none}
@@ -109,6 +62,50 @@
   /* zone admin (visible uniquement en mode #adm=) : saisie commentaire */
   #admBox{padding:8px 12px;border-top:1px solid #26304a;display:none;flex-direction:column;gap:6px}
   #admBox.on{display:flex}
+  /* =========== ADAPTATION SMARTPHONE ===========
+     REGLE D'OR : cette section est en FIN de feuille car, a specificite
+     egale, la DERNIERE regle du source gagne - placee avant les regles
+     de base (#zoom, select.nav, #bar a...), elle etait systematiquement
+     ecrasee (bug v5.3 : zoom visibles, boutons hdFlip masques sur S8). */
+  /* bases "cachees par defaut" (laptop) : AVANT les media queries */
+  #hdFlip,#hdLayout{display:none}
+  #btFlip{display:none}
+  #btLayoutM{display:none}
+  /* monofenetre (ecran tres etroit) : photo OU carte, bascule glisse/bouton */
+  #wrap.single{flex-direction:column}
+  #wrap.single #split{display:none}
+  #wrap.single #side{--side-w:100%}
+  #wrap.single:not(.showmap) #mapwrap{display:none}
+  #wrap.single.showmap #side{display:none}
+  #wrap.single.showmap #mapwrap{flex:1}
+  #wrap.single.showmap #btFlip{display:flex;position:absolute;left:10px;bottom:14px;z-index:1001;width:46px;height:46px;border-radius:12px;border:2px solid #b35300;background:#ff7a00cc;color:#fff;font-size:22px;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(3px)}
+  #wrap.single.showmap #btFlip:hover{background:#ffa040}
+  /* empilement portrait : galerie au-dessus (55%), carte dessous */
+  @media (orientation: portrait) and (max-width:820px){
+    #wrap{flex-direction:column}
+    #side{--side-w:55%}
+    #split{flex:0 0 10px;cursor:row-resize;border-left:none;border-right:none;border-top:1px solid #39445c;border-bottom:1px solid #39445c}
+  }
+  @media (max-width:820px){
+    /* gestes > boutons : fleches et zoom retires sur smartphone */
+    #prev,#next,#zoom{display:none}
+    /* l'URL/nom de fichier n'apporte rien sur mobile : date deja dans
+       le menu, le commentaire reste (bloc #cmt) */
+    #cap .nm,#cap .dt{display:none}
+    select.nav{width:104px;height:40px;font-size:12.5px;padding-right:20px;
+      /* fleche "menu deroulant" dessinee (appearance:none l'a retiree) */
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 6px center}
+    #bar a{padding:7px 9px;font-size:12px;border-width:1px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
+    #cap{font-size:12px}
+    #cmt{font-size:13.5px;max-height:3.4em}
+    #admBox button{height:38px;font-size:14px}
+    /* boutons d'entete photo (mobile seulement) : bascule carte + layout */
+    #hdFlip,#hdLayout{display:flex;flex:0 0 40px;height:40px;font-size:17px;align-items:center;justify-content:center}
+    /* bouton layout 2-fenetres, sur la carte (mobile seulement) */
+    #btLayoutM{display:flex;position:absolute;left:64px;bottom:14px;z-index:1001;width:46px;height:46px;border-radius:12px;border:2px solid #b35300;background:#ff7a00cc;color:#fff;font-size:18px;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(3px)}
+    #btLayoutM:hover{background:#ffa040}
+  }
   #admBox textarea{background:#0d1117;color:#eee;border:1px solid #45526b;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;resize:vertical;min-height:44px}
   #admBox button{align-self:flex-end;height:42px;font-size:16px}
   #cnt{font-size:12px;opacity:.7;padding:0 4px}
