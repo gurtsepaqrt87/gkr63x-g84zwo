@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="fr">
-<!-- VERSION v5.9 : chercher "v5.9" (Ctrl+U, Ctrl+F).
-     v5.9 = mobile : bouton date elargi (124 px) - le chevron ▾ avait
-     disparu faute de place apres l'elargissement laptop (v5.6, 128 px
-     de base). Laptop inchange. -->
+<!-- VERSION v5.10 : chercher "v5.10" (Ctrl+U, Ctrl+F).
+     v5.10 = FIX chevron : le ▾ etait positionne par rapport au
+     conteneur (largeur totale entre < et >) depuis le recentrage v5.5,
+     donc exile loin du bouton date. Nouvelle boite .selbox epaissante
+     le bouton : le chevron se cale desormais sur le BOUTON, laptop et
+     mobile. Largeurs inchangees (128 laptop / 124 mobile). -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,7 +57,11 @@
   /* menu deroulant Date : meme famille visuelle orange que les fleches ;
      largeur libre, fleches intouchables. Le chevron est un VRAI element
      overlay (Chrome Android ignore background-image sur <select>). */
-  .selwrap{position:relative;display:flex;flex:1 1 auto;min-width:0;justify-content:center}
+  .selwrap{display:flex;flex:1 1 auto;min-width:0;justify-content:center}
+  /* selbox : boite qui EPAUSSERTE le bouton date (shrink-to-fit) - le
+     chevron absolute se cale sur elle, donc TOUJOURS au bord du bouton,
+     jamais au bord du conteneur (bug v5.5-v5.9 : chevron exile a droite) */
+  .selbox{position:relative;display:inline-flex;min-width:0}
   select.nav{width:128px;max-width:170px;height:56px;font-size:16px;font-weight:700;background:#ff7a00;border:2px solid #b35300;color:#fff;cursor:pointer;border-radius:10px;text-align:center;text-align-last:center;padding:0 24px 0 6px;box-shadow:0 3px 8px rgba(0,0,0,.45);-webkit-appearance:none;appearance:none}
   .selArrow{position:absolute;right:7px;top:50%;transform:translateY(-50%);pointer-events:none;color:#fff;font-size:15px;font-weight:700;line-height:1}
   select.nav:hover{background:#ffa040}
@@ -117,7 +123,7 @@
   <aside id="side">
     <div class="sh">
       <button class="nav" id="prev" title="Précédent (←)">‹</button>
-      <div class="selwrap"><select class="nav" id="btDate" title="Journée affichée"></select><span class="selArrow">▾</span></div>
+      <div class="selwrap"><span class="selbox"><select class="nav" id="btDate" title="Journée affichée"></select><span class="selArrow">▾</span></span></div>
       <button class="nav" id="hdFlip" title="Voir la carte">🗺</button>
       <button class="nav" id="hdLayout" title="Affichage 2 fenêtres">⧉</button>
       <span id="cnt"></span>
