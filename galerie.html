@@ -1,10 +1,9 @@
 <!doctype html>
 <html lang="fr">
-<!-- VERSION v5.7 : chercher "v5.7" (Ctrl+U, Ctrl+F).
-     v5.7 = laptop : largeur fenetre photos FIXE (~ photo paysage, cappee
-     2/3 ecran, plancher 348 px) - plus de reduction sur les videos :
-     le bouton > reste immobile (clic souris sans deplacement). La
-     poignee garde priorite apres un glisse utilisateur (userResized). -->
+<!-- VERSION v5.8 : chercher "v5.8" (Ctrl+U, Ctrl+F).
+     v5.8 = largeur fenetre photos fixee a PHOTO_W=600 (= largeur paysage
+     de RESIZE dans config.sh, ex. 600x450), cappee 2/3 ecran + plancher
+     348 px. Ajuster PHOTO_W si RESIZE change. -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -375,17 +374,15 @@ document.getElementById("zin").onclick = () => { if (zoom < ZMAX) { zoom++; rend
 document.getElementById("zout").onclick = () => { if (zoom > ZMIN) { zoom--; render(); } };
 
 // ---------- galerie ----------
-// v5.7 : largeur de fenetre FIXE (plus d'ajustement au media affiche).
-// Objectif : le bouton ">" reste toujours au meme endroit (confort de
-// clic sans deplacer la souris) et une video en portrait ne retricit
-// plus la fenetre. La largeur est fixee une fois, a la taille type
-// d'une photo en paysage (photos du projet : ~1600 px de large, cappee
-// a 2/3 de l'ecran et au plancher de l'en-tete). L'utilisateur garde
-// la main via la poignee (userResized), et le plancher 348 px reste
-// applique par setSideW.
+// v5.8 : largeur de fenetre FIXE. Les photos publiees font RESIZE
+// (config.sh, ex. 600x450) : la fenetre prend la largeur PAYSAGE des
+// photos (600), cappee a 2/3 de l'ecran et au plancher de l'en-tete.
+// Les videos ne redimensionnent plus rien : le bouton > reste immobile.
+// Si vous changez RESIZE dans config.sh, ajustez la constante en dessous.
+const PHOTO_W = 600;   // = largeur paysage definie par RESIZE dans config.sh
 function fitSideToMedia(el, isVideo) {
   if (userResized || MOBILE) return;
-  setSideW(1600);   // largeur "photo paysage" type ; setSideW cappe/minore
+  setSideW(PHOTO_W);   // setSideW applique plafond 2/3 ecran + plancher 348
   render();
 }
 function openGal(i) {
